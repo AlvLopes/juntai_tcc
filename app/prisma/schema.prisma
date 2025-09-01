@@ -1,0 +1,146 @@
+// Schema para plataforma de crowdfunding social Juntaí
+
+generator client {
+    provider = "prisma-client-js"
+    binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+    output = "/home/ubuntu/juntai_crowdfunding/app/node_modules/.prisma/client"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model User {
+  id                Int       @id @default(autoincrement())
+  email             String    @unique
+  password          String
+  firstName         String
+  lastName          String
+  phone             String?
+  bio               String?
+  avatar            String?
+  isVerified        Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relacionamentos
+  projects          Project[]
+  donations         Donation[]
+  comments          Comment[]
+  accounts          Account[]
+  sessions          Session[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            Int
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       Int
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  description String?
+  icon        String?
+  createdAt   DateTime  @default(now())
+  
+  // Relacionamentos
+  projects    Project[]
+
+  @@map("categories")
+}
+
+model Project {
+  id                 Int       @id @default(autoincrement())
+  title              String
+  description        String
+  shortDescription   String?
+  image              String?
+  goalAmount         Decimal   @db.Decimal(10, 2)
+  currentAmount      Decimal   @default(0) @db.Decimal(10, 2)
+  endDate            DateTime
+  isActive           Boolean   @default(true)
+  isFeatured         Boolean   @default(false)
+  location           String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  
+  // Relacionamentos
+  creatorId          Int
+  creator            User      @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  categoryId         Int
+  category           Category  @relation(fields: [categoryId], references: [id])
+  donations          Donation[]
+  comments           Comment[]
+
+  @@map("projects")
+}
+
+model Donation {
+  id              Int       @id @default(autoincrement())
+  amount          Decimal   @db.Decimal(10, 2)
+  isAnonymous     Boolean   @default(false)
+  paypalOrderId   String?   @unique
+  paypalStatus    String?
+  message         String?
+  createdAt       DateTime  @default(now())
+  
+  // Relacionamentos
+  donorId         Int
+  donor           User      @relation(fields: [donorId], references: [id])
+  projectId       Int
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("donations")
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relacionamentos
+  authorId  Int
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  projectId Int
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("comments")
+}
