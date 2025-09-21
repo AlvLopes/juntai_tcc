@@ -2,7 +2,7 @@
 
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { EmblaOptionsType } from 'embla-carousel'
 import useEmblaCarousel from 'embla-carousel-react'
 import Image from 'next/image'
@@ -39,6 +39,31 @@ export default function MediaCarousel({
 
   const [emblaRef, emblaApi] = useEmblaCarousel(options)
 
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return
+    setSelectedIndex(emblaApi.selectedScrollSnap())
+    // Pausar todos os vídeos ao mudar de slide
+    Object.values(videoRefs.current).forEach(video => {
+      if (video) {
+        video.pause()
+      }
+    })
+    setPlayingVideo(null)
+  }, [emblaApi])
+
+  useEffect(() => {
+    if (!emblaApi) return
+    
+    onSelect()
+    emblaApi.on('reInit', onSelect)
+    emblaApi.on('select', onSelect)
+    
+    return () => {
+      emblaApi.off('select', onSelect)
+      emblaApi.off('reInit', onSelect)
+    }
+  }, [emblaApi, onSelect])
+
   const scrollPrev = useCallback(() => {
     if (emblaApi) emblaApi.scrollPrev()
   }, [emblaApi])
@@ -50,14 +75,6 @@ export default function MediaCarousel({
   const scrollTo = useCallback((index: number) => {
     if (emblaApi) {
       emblaApi.scrollTo(index)
-      setSelectedIndex(index)
-      // Pausar todos os vídeos ao mudar de slide
-      Object.values(videoRefs.current).forEach(video => {
-        if (video) {
-          video.pause()
-        }
-      })
-      setPlayingVideo(null)
     }
   }, [emblaApi])
 
@@ -93,7 +110,7 @@ export default function MediaCarousel({
         <div className={`embla overflow-hidden rounded-lg ${aspectRatioClass} bg-gray-100`} ref={emblaRef}>
           <div className="embla__container flex">
             {media.map((item, index) => (
-              <div key={item.id} className="embla__slide flex-[0_0_100%] relative">
+              <div key={item.id} className={`embla__slide flex-[0_0_100%] relative ${aspectRatioClass}`}>
                 {item.type === 'IMAGEM' ? (
                   <Image
                     src={item.url}
