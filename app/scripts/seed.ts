@@ -409,6 +409,89 @@ Meta: formar 60 desenvolvedores por ano, com taxa de empregabilidade de 80%. Tra
   }
   await Promise.all(comments)
 
+  // Criar múltiplas imagens para projetos (ProjectMedia)
+  console.log('🖼️ Adicionando imagens aos projetos...')
+  const projectImages = [
+    // Biblioteca Comunitária (projeto 0)
+    {
+      projectId: projects[0].id,
+      images: [
+        'https://img.globalcitizen.org/HvJCHRtP_sA-bl0yVpRLccSn0dDJj3RXALYbqj3-/1600x900%2Ffilters%3Aquality%2885%29%2Fhttps%3A%2F%2Fmedia.globalcitizen.org%2Ffd%2F34%2Ffd34778a-1795-4009-b876-0bb56c44fd44%2Fimprove-literacy-local-hero.jpg',
+        'https://cdn.abacus.ai/images/2452dd8b-5c6a-467f-aae5-adb70f9c6adf.png',
+        'https://cdn.abacus.ai/images/a51a53cf-e5a8-4405-afc0-74a2341b503e.png',
+        'https://images.adsttc.com/media/images/6699/30cb/c8b7/c844/75ed/22ba/large_jpg/reading-as-a-social-act_18.jpg?1721315540'
+      ]
+    },
+    // Verde Urbano (projeto 1)
+    {
+      projectId: projects[1].id,
+      images: [
+        'https://ychef.files.bbci.co.uk/1280x720/p0lyc7b9.jpg',
+        'https://cdn.abacus.ai/images/aae0db6f-bfcb-4e2d-934e-d52b6aee81e0.png',
+        'https://cdn.abacus.ai/images/1c81644d-cb30-4146-8339-25a336a607c3.png',
+        'https://www.reuters.com/investigates/special-report/assets/brazil-environment-reforestation/741A0653.jpg?v=073501180823'
+      ]
+    },
+    // Saúde Mobile (projeto 2)
+    {
+      projectId: projects[2].id,
+      images: [
+        'https://rmhc.org/-/media/Feature/RMHC-Production-Images/RMCM/Image-Gallery/Exterior/rmcm-imagegallery-exterior-4.png?h=540&iar=0&w=1025&hash=807DFE39708BAE979D6DBB9D423FE99F',
+        'https://cdn.abacus.ai/images/221f5445-12b4-47f6-b5c6-87852601bd26.png',
+        'https://cdn.abacus.ai/images/b25fcabb-2074-47e8-8ef7-42469eb5ce5a.png',
+        'https://www.optum.com/content/dam/optum-dam/images/consumers/care/mobile-clinic-van-1080x720.jpg'
+      ]
+    },
+    // Mesa Solidária (projeto 3)
+    {
+      projectId: projects[3].id,
+      images: [
+        'https://i.ytimg.com/vi/INZpwy_g8F4/maxresdefault.jpg',
+        'https://cdn.abacus.ai/images/07e49322-fe32-4a49-9a3d-b9ce9ffaa428.png',
+        'https://mluebagwtknq.i.optimole.com/cb:NsXo.5646/w:1651/h:997/q:mauto/f:best/https://tprf.org/wp-content/uploads/2023/05/Smiling-Head-of-Kitchen-Bibli-ASPA-Enjoys-TPRF-Grant-e1684833715240.png',
+        'https://i0.wp.com/www.yesmagazine.org/wp-content/uploads/2020/11/belo-horizonte-food-security-2.jpg?resize=1024%2C658&quality=45&ssl=1'
+      ]
+    },
+    // Esporte Transformador (projeto 4)
+    {
+      projectId: projects[4].id,
+      images: [
+        'https://i.ytimg.com/vi/FxYszbN0byQ/maxresdefault.jpg',
+        'https://cdn.abacus.ai/images/5b118125-c3fd-4ba1-b17a-38b764498e8e.png',
+        'https://ik.imagekit.io/rezeve/cms/images/blog-posts/50400d6d-fdfc-4d8f-b040-014f9c9ba4c1~Rezeve%20Gambar%20Fix%20(50).jpg',
+        'https://supercampbrazil.com/wp-content/uploads/2023/02/youth-soccer-9.webp?w=750'
+      ]
+    },
+    // Código do Futuro (projeto 5)
+    {
+      projectId: projects[5].id,
+      images: [
+        'https://storage.googleapis.com/nucamp-production.appspot.com/aiseo-blogs/coding-bootcamp-brazil-bra/coding-bootcamp-brazil-bra-top-5-best-coding-bootcamps-in-brazil-in-2025/thumbnail01.webp',
+        'https://cdn.abacus.ai/images/ebe3274c-8d43-427f-aad1-031c71a10f4f.png',
+        'https://news.mit.edu/sites/default/files/images/202310/brazil-2-octostudio_0.jpg',
+        'https://www.apple.com/newsroom/images/product/services/standard/Apple-Computer-Science-Education-Week-hero_big.jpg.slideshow-large_2x.jpg'
+      ]
+    }
+  ]
+
+  const mediaEntries = []
+  for (const project of projectImages) {
+    for (let i = 0; i < project.images.length; i++) {
+      mediaEntries.push(
+        prisma.projectMedia.create({
+          data: {
+            projectId: project.projectId,
+            url: project.images[i],
+            type: 'IMAGEM',
+            order: i,
+            filename: `projeto-${project.projectId}-imagem-${i + 1}.jpg`
+          }
+        })
+      )
+    }
+  }
+  await Promise.all(mediaEntries)
+
   console.log('✅ Seed concluído com sucesso!')
   console.log(`
 📊 Dados criados:
@@ -417,6 +500,7 @@ Meta: formar 60 desenvolvedores por ano, com taxa de empregabilidade de 80%. Tra
 - ${projects.length} projetos
 - ${donations.length} doações
 - ${comments.length} comentários
+- ${mediaEntries.length} imagens de projetos
 
 🔑 Usuários de teste (senha: 123456):
 - maria.silva@email.com

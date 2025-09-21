@@ -20,6 +20,15 @@ export interface Category {
   createdAt: string
 }
 
+export interface ProjectMedia {
+  id: number
+  url: string
+  type: 'IMAGEM' | 'VIDEO'
+  filename?: string
+  order: number
+  createdAt: string
+}
+
 export interface Project {
   id: number
   title: string
@@ -44,6 +53,7 @@ export interface Project {
     bio?: string
   }
   category: Category
+  media?: ProjectMedia[]
   donationCount?: number
   progressPercentage?: number
 }

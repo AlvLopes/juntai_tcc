@@ -60,6 +60,13 @@ const config: Config = {
           '4': 'hsl(var(--chart-4))',
           '5': 'hsl(var(--chart-5))',
         },
+        // Juntaí Brand Colors
+        'juntai': {
+          green: '#31B454',     // R:49 G:180 B:84
+          blue: '#18A4DD',      // R:24 G:164 B:221
+          orange: '#F8A367',    // R:248 G:163 B:103
+          cream: '#FFFDF1',     // R:255 G:253 B:241
+        },
       },
       keyframes: {
         'accordion-down': {

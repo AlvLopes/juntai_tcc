@@ -49,6 +49,9 @@ export async function GET(req: NextRequest) {
             }
           },
           category: true,
+          media: {
+            orderBy: { order: 'asc' }
+          },
           _count: {
             select: { donations: true }
           }

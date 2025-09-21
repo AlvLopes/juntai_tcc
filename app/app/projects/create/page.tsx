@@ -20,6 +20,7 @@ import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { CalendarIcon, ImageIcon, Target } from 'lucide-react'
 import { toast } from 'sonner'
+import MediaUpload from '@/components/ui/media-upload'
 
 const projectSchema = z.object({
   title: z.string()
@@ -54,8 +55,7 @@ export default function CreateProjectPage() {
   const router = useRouter()
   const { data: session, status } = useSession() || {}
   const [categories, setCategories] = useState<Category[]>([])
-  const [imageFile, setImageFile] = useState<File | null>(null)
-  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [mediaFiles, setMediaFiles] = useState<any[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const {
@@ -91,52 +91,23 @@ export default function CreateProjectPage() {
     }
   }
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB
-        toast.error('Imagem deve ter no máximo 5MB')
-        return
-      }
-      
-      if (!file.type.startsWith('image/')) {
-        toast.error('Arquivo deve ser uma imagem')
-        return
-      }
-
-      setImageFile(file)
-      const reader = new FileReader()
-      reader.onload = (e) => setImagePreview(e.target?.result as string)
-      reader.readAsDataURL(file)
-    }
+  const handleMediaChange = (media: any[]) => {
+    setMediaFiles(media)
   }
 
   const onSubmit = async (data: ProjectFormData) => {
     try {
       setIsSubmitting(true)
 
-      let imageUrl = null
-      
-      // Upload da imagem se fornecida
-      if (imageFile) {
-        const formData = new FormData()
-        formData.append('file', imageFile)
-        
-        const uploadResponse = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData
-        })
-        
-        if (uploadResponse.ok) {
-          const uploadData = await uploadResponse.json()
-          imageUrl = uploadData.url
-        }
+      // Validar se há pelo menos 2 mídias
+      if (mediaFiles.length < 2) {
+        toast.error('Adicione pelo menos 2 imagens para o projeto')
+        return
       }
 
-      // Criar projeto
+      // Primeiro, criar o projeto
       const projectData = {
         ...data,
-        image: imageUrl,
         goalAmount: data.goalAmount.toString(),
         endDate: data.endDate.toISOString()
       }
@@ -149,14 +120,38 @@ export default function CreateProjectPage() {
         body: JSON.stringify(projectData)
       })
 
-      if (response.ok) {
-        const project = await response.json()
-        toast.success('Projeto criado com sucesso!')
-        router.push(`/projects/${project.id}`)
-      } else {
+      if (!response.ok) {
         const error = await response.json()
         toast.error(error.error || 'Erro ao criar projeto')
+        return
       }
+
+      const project = await response.json()
+
+      // Depois, fazer upload das mídias
+      if (mediaFiles.length > 0) {
+        const formData = new FormData()
+        formData.append('projectId', project.id.toString())
+        
+        mediaFiles.forEach((mediaFile, index) => {
+          formData.append(`media-${index}`, mediaFile.file)
+        })
+
+        const uploadResponse = await fetch('/api/projects/media/upload', {
+          method: 'POST',
+          body: formData
+        })
+
+        if (!uploadResponse.ok) {
+          console.error('Erro no upload das mídias, mas projeto foi criado')
+          toast.warning('Projeto criado, mas houve erro no upload das imagens')
+        } else {
+          toast.success('Projeto criado com sucesso!')
+        }
+      }
+
+      router.push(`/projects/${project.id}`)
+      
     } catch (error) {
       console.error('Erro ao criar projeto:', error)
       toast.error('Erro ao criar projeto')
@@ -338,30 +333,13 @@ export default function CreateProjectPage() {
 
                 {/* Upload de Imagem */}
                 <div className="space-y-2">
-                  <Label htmlFor="image">Imagem do Projeto</Label>
-                  <div className="space-y-4">
-                    <Input
-                      id="image"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      className="cursor-pointer"
-                    />
-                    
-                    {imagePreview && (
-                      <div className="relative w-full aspect-video rounded-lg overflow-hidden border">
-                        <img
-                          src={imagePreview}
-                          alt="Preview"
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )}
-                    
-                    <p className="text-sm text-gray-500">
-                      Formatos aceitos: JPG, PNG, GIF. Tamanho máximo: 5MB
-                    </p>
-                  </div>
+                  <Label>Imagens e Vídeos do Projeto</Label>
+                  <MediaUpload
+                    onMediaChange={handleMediaChange}
+                    maxFiles={6}
+                    maxVideoFiles={1}
+                    disabled={isSubmitting}
+                  />
                 </div>
 
                 {/* Botões */}

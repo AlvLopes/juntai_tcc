@@ -21,6 +21,17 @@ model User {
   bio               String?
   avatar            String?
   isVerified        Boolean   @default(false)
+  
+  // Campos de endereço
+  cep               String?
+  address           String?   // Logradouro
+  addressNumber     String?   // Número
+  complement        String?   // Complemento
+  neighborhood      String?   // Bairro
+  city              String?   // Cidade
+  state             String?   // Estado/UF
+  country           String?   @default("Brasil")
+  
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   
@@ -91,7 +102,7 @@ model Project {
   title              String
   description        String
   shortDescription   String?
-  image              String?
+  image              String?   // Imagem principal (compatibilidade)
   goalAmount         Decimal   @db.Decimal(10, 2)
   currentAmount      Decimal   @default(0) @db.Decimal(10, 2)
   endDate            DateTime
@@ -108,8 +119,29 @@ model Project {
   category           Category  @relation(fields: [categoryId], references: [id])
   donations          Donation[]
   comments           Comment[]
+  media              ProjectMedia[]
 
   @@map("projects")
+}
+
+model ProjectMedia {
+  id        Int      @id @default(autoincrement())
+  projectId Int
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  url       String   // URL do arquivo (imagem ou vídeo)
+  type      MediaType // IMAGEM ou VIDEO
+  filename  String?  // Nome original do arquivo
+  order     Int      @default(0) // Ordem de exibição
+  
+  createdAt DateTime @default(now())
+  
+  @@map("project_media")
+}
+
+enum MediaType {
+  IMAGEM
+  VIDEO
 }
 
 model Donation {

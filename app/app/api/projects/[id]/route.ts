@@ -27,6 +27,9 @@ export async function GET(
           }
         },
         category: true,
+        media: {
+          orderBy: { order: 'asc' }
+        },
         donations: {
           include: {
             donor: {

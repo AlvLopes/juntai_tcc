@@ -28,6 +28,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Project } from '@/lib/types'
+import MediaCarousel from '@/components/ui/media-carousel'
 
 interface Comment {
   id: number
@@ -228,18 +229,28 @@ export default function ProjectDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Conteúdo Principal */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Imagem Principal */}
-            <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100">
-              {project.image ? (
-                <Image
-                  src={project.image}
-                  alt={project.title}
-                  fill
-                  className="object-cover"
+            {/* Carrossel de Mídias */}
+            <div className="space-y-4">
+              {project.media && project.media.length > 0 ? (
+                <MediaCarousel 
+                  media={project.media}
+                  className="w-full"
+                  aspectRatio="video"
                 />
+              ) : project.image ? (
+                <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100">
+                  <Image
+                    src={project.image}
+                    alt={project.title}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
               ) : (
-                <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                  <Heart className="h-24 w-24 text-primary/40" />
+                <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100">
+                  <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                    <Heart className="h-24 w-24 text-primary/40" />
+                  </div>
                 </div>
               )}
             </div>

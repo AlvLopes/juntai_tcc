@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '@/components/ui/card'
 import { Heart, Mail, Lock, User, Phone, ArrowRight } from 'lucide-react'
 import { toast } from 'sonner'
+import AddressForm from '@/components/ui/address-form'
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -20,6 +21,18 @@ export default function RegisterPage() {
     password: '',
     confirmPassword: ''
   })
+  
+  const [addressData, setAddressData] = useState({
+    cep: '',
+    address: '',
+    addressNumber: '',
+    complement: '',
+    neighborhood: '',
+    city: '',
+    state: '',
+    country: 'Brasil'
+  })
+  
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
@@ -63,7 +76,16 @@ export default function RegisterPage() {
           lastName,
           email,
           password,
-          phone
+          phone,
+          // Dados de endereço
+          cep: addressData.cep,
+          address: addressData.address,
+          addressNumber: addressData.addressNumber,
+          complement: addressData.complement,
+          neighborhood: addressData.neighborhood,
+          city: addressData.city,
+          state: addressData.state,
+          country: addressData.country
         }),
       })
 
@@ -85,9 +107,13 @@ export default function RegisterPage() {
     }
   }
 
+  const handleAddressChange = (data: Partial<typeof addressData>) => {
+    setAddressData(prev => ({ ...prev, ...data }))
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md space-y-8">
+      <div className="w-full max-w-2xl space-y-8">
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center">
             <Heart className="h-12 w-12 text-primary" />
@@ -168,6 +194,15 @@ export default function RegisterPage() {
                     className="pl-10"
                   />
                 </div>
+              </div>
+
+              {/* Componente de endereço */}
+              <div className="pt-4 border-t border-gray-200">
+                <AddressForm 
+                  data={addressData}
+                  onChange={handleAddressChange}
+                  disabled={loading}
+                />
               </div>
               
               <div className="space-y-2">

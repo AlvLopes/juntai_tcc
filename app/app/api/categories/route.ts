@@ -15,7 +15,7 @@ export async function GET() {
       }
     })
 
-    return NextResponse.json(categories)
+    return NextResponse.json({ categories })
 
   } catch (error) {
     console.error('Erro ao buscar categorias:', error)
