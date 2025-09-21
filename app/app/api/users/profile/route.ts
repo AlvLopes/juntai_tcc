@@ -27,7 +27,15 @@ export async function GET(req: NextRequest) {
         phone: true,
         bio: true,
         avatar: true,
-        createdAt: true
+        createdAt: true,
+        cep: true,
+        address: true,
+        addressNumber: true,
+        complement: true,
+        neighborhood: true,
+        city: true,
+        state: true,
+        country: true
       }
     })
 
@@ -60,7 +68,21 @@ export async function PATCH(req: NextRequest) {
     }
 
     const userId = parseInt(session.user.id)
-    const { firstName, lastName, phone, bio, avatar } = await req.json()
+    const { 
+      firstName, 
+      lastName, 
+      phone, 
+      bio, 
+      avatar, 
+      cep,
+      address,
+      addressNumber,
+      complement,
+      neighborhood,
+      city,
+      state,
+      country
+    } = await req.json()
 
     if (!firstName || !lastName) {
       return NextResponse.json(
@@ -76,7 +98,15 @@ export async function PATCH(req: NextRequest) {
         lastName,
         phone: phone || null,
         bio: bio || null,
-        avatar: avatar || null
+        avatar: avatar || null,
+        cep: cep || null,
+        address: address || null,
+        addressNumber: addressNumber || null,
+        complement: complement || null,
+        neighborhood: neighborhood || null,
+        city: city || null,
+        state: state || null,
+        country: country || null
       },
       select: {
         id: true,
@@ -86,7 +116,15 @@ export async function PATCH(req: NextRequest) {
         phone: true,
         bio: true,
         avatar: true,
-        createdAt: true
+        createdAt: true,
+        cep: true,
+        address: true,
+        addressNumber: true,
+        complement: true,
+        neighborhood: true,
+        city: true,
+        state: true,
+        country: true
       }
     })
 

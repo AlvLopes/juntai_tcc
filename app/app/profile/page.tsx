@@ -29,6 +29,30 @@ const profileSchema = z.object({
     .refine((phone) => !phone || phone.length >= 10, 'Telefone deve ter pelo menos 10 dígitos'),
   bio: z.string()
     .max(500, 'Bio deve ter no máximo 500 caracteres')
+    .optional(),
+  cep: z.string()
+    .optional()
+    .refine((cep) => !cep || /^\d{5}-?\d{3}$/.test(cep), 'CEP deve ter o formato 12345-678'),
+  address: z.string()
+    .max(100, 'Endereço deve ter no máximo 100 caracteres')
+    .optional(),
+  addressNumber: z.string()
+    .max(10, 'Número deve ter no máximo 10 caracteres')
+    .optional(),
+  complement: z.string()
+    .max(50, 'Complemento deve ter no máximo 50 caracteres')
+    .optional(),
+  neighborhood: z.string()
+    .max(50, 'Bairro deve ter no máximo 50 caracteres')
+    .optional(),
+  city: z.string()
+    .max(50, 'Cidade deve ter no máximo 50 caracteres')
+    .optional(),
+  state: z.string()
+    .max(2, 'Estado deve ter no máximo 2 caracteres')
+    .optional(),
+  country: z.string()
+    .max(50, 'País deve ter no máximo 50 caracteres')
     .optional()
 })
 
@@ -43,6 +67,14 @@ interface UserProfile {
   bio?: string
   avatar?: string
   createdAt: string
+  cep?: string
+  address?: string
+  addressNumber?: string
+  complement?: string
+  neighborhood?: string
+  city?: string
+  state?: string
+  country?: string
 }
 
 export default function ProfilePage() {
@@ -88,6 +120,14 @@ export default function ProfilePage() {
         setValue('lastName', data.lastName)
         setValue('phone', data.phone || '')
         setValue('bio', data.bio || '')
+        setValue('cep', data.cep || '')
+        setValue('address', data.address || '')
+        setValue('addressNumber', data.addressNumber || '')
+        setValue('complement', data.complement || '')
+        setValue('neighborhood', data.neighborhood || '')
+        setValue('city', data.city || '')
+        setValue('state', data.state || '')
+        setValue('country', data.country || '')
       }
     } catch (error) {
       console.error('Erro ao buscar perfil:', error)
@@ -338,6 +378,119 @@ export default function ProfilePage() {
                     )}
                   </div>
 
+                  <Separator />
+
+                  {/* Endereço */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                      <MapPin className="h-5 w-5" />
+                      Endereço
+                    </h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="cep">CEP</Label>
+                        <Input
+                          id="cep"
+                          placeholder="12345-678"
+                          {...register('cep')}
+                        />
+                        {errors.cep && (
+                          <p className="text-sm text-red-600">{errors.cep.message}</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="address">Logradouro</Label>
+                        <Input
+                          id="address"
+                          placeholder="Rua, Avenida, etc."
+                          {...register('address')}
+                        />
+                        {errors.address && (
+                          <p className="text-sm text-red-600">{errors.address.message}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="addressNumber">Número</Label>
+                        <Input
+                          id="addressNumber"
+                          placeholder="123"
+                          {...register('addressNumber')}
+                        />
+                        {errors.addressNumber && (
+                          <p className="text-sm text-red-600">{errors.addressNumber.message}</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="complement">Complemento</Label>
+                        <Input
+                          id="complement"
+                          placeholder="Apto 101, Bloco A, etc."
+                          {...register('complement')}
+                        />
+                        {errors.complement && (
+                          <p className="text-sm text-red-600">{errors.complement.message}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="neighborhood">Bairro</Label>
+                        <Input
+                          id="neighborhood"
+                          placeholder="Centro"
+                          {...register('neighborhood')}
+                        />
+                        {errors.neighborhood && (
+                          <p className="text-sm text-red-600">{errors.neighborhood.message}</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="city">Cidade</Label>
+                        <Input
+                          id="city"
+                          placeholder="São Paulo"
+                          {...register('city')}
+                        />
+                        {errors.city && (
+                          <p className="text-sm text-red-600">{errors.city.message}</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="state">Estado</Label>
+                        <Input
+                          id="state"
+                          placeholder="SP"
+                          maxLength={2}
+                          {...register('state')}
+                        />
+                        {errors.state && (
+                          <p className="text-sm text-red-600">{errors.state.message}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="country">País</Label>
+                      <Input
+                        id="country"
+                        placeholder="Brasil"
+                        {...register('country')}
+                      />
+                      {errors.country && (
+                        <p className="text-sm text-red-600">{errors.country.message}</p>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Botões */}
                   <div className="flex gap-4">
                     <Button
@@ -413,6 +566,63 @@ export default function ProfilePage() {
                         <Label className="text-sm text-gray-600">Biografia</Label>
                         <p className="text-gray-700 whitespace-pre-wrap">{profile.bio}</p>
                       </div>
+                    )}
+
+                    {/* Endereço */}
+                    {(profile.cep || profile.address || profile.city) && (
+                      <>
+                        <Separator />
+                        <div className="space-y-4">
+                          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                            <MapPin className="h-5 w-5" />
+                            Endereço
+                          </h3>
+                          
+                          <div className="space-y-3">
+                            {profile.cep && (
+                              <div>
+                                <Label className="text-sm text-gray-600">CEP</Label>
+                                <p className="font-medium">{profile.cep}</p>
+                              </div>
+                            )}
+
+                            {(profile.address || profile.addressNumber) && (
+                              <div>
+                                <Label className="text-sm text-gray-600">Logradouro</Label>
+                                <p className="font-medium">
+                                  {profile.address}
+                                  {profile.addressNumber && `, ${profile.addressNumber}`}
+                                  {profile.complement && `, ${profile.complement}`}
+                                </p>
+                              </div>
+                            )}
+
+                            {profile.neighborhood && (
+                              <div>
+                                <Label className="text-sm text-gray-600">Bairro</Label>
+                                <p className="font-medium">{profile.neighborhood}</p>
+                              </div>
+                            )}
+
+                            {(profile.city || profile.state) && (
+                              <div>
+                                <Label className="text-sm text-gray-600">Cidade/Estado</Label>
+                                <p className="font-medium">
+                                  {profile.city}
+                                  {profile.state && `, ${profile.state}`}
+                                </p>
+                              </div>
+                            )}
+
+                            {profile.country && (
+                              <div>
+                                <Label className="text-sm text-gray-600">País</Label>
+                                <p className="font-medium">{profile.country}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </>
                     )}
                   </div>
                 </div>

@@ -77,7 +77,16 @@ async function main() {
         phone: '(11) 99999-1111',
         bio: 'Educadora social há 10 anos, apaixonada por transformar vidas através da educação.',
         avatar: 'https://i.pinimg.com/736x/24/fa/6d/24fa6dedeed2a74816b6e3c7fad654b3.jpg',
-        isVerified: true
+        isVerified: true,
+        // Endereço em São Paulo
+        cep: '01310-100',
+        address: 'Avenida Paulista',
+        addressNumber: '1578',
+        complement: 'Apto 1205',
+        neighborhood: 'Bela Vista',
+        city: 'São Paulo',
+        state: 'SP',
+        country: 'Brasil'
       }
     }),
     prisma.user.create({
@@ -89,7 +98,16 @@ async function main() {
         phone: '(21) 98888-2222',
         bio: 'Ambientalista e fundador de projetos de reflorestamento urbano.',
         avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-        isVerified: true
+        isVerified: true,
+        // Endereço no Rio de Janeiro
+        cep: '22071-900',
+        address: 'Avenida Atlântica',
+        addressNumber: '2964',
+        complement: 'Cobertura',
+        neighborhood: 'Copacabana',
+        city: 'Rio de Janeiro',
+        state: 'RJ',
+        country: 'Brasil'
       }
     }),
     prisma.user.create({
@@ -101,7 +119,16 @@ async function main() {
         phone: '(85) 97777-3333',
         bio: 'Médica voluntária em projetos de saúde comunitária.',
         avatar: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&h=150&fit=crop&crop=face',
-        isVerified: true
+        isVerified: true,
+        // Endereço em Fortaleza
+        cep: '60165-081',
+        address: 'Avenida Beira Mar',
+        addressNumber: '3980',
+        complement: 'Bloco B Apto 804',
+        neighborhood: 'Mucuripe',
+        city: 'Fortaleza',
+        state: 'CE',
+        country: 'Brasil'
       }
     }),
     prisma.user.create({
@@ -113,7 +140,16 @@ async function main() {
         phone: '(31) 96666-4444',
         bio: 'Chef de cozinha que coordena projetos de combate à fome.',
         avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-        isVerified: true
+        isVerified: true,
+        // Endereço em Belo Horizonte
+        cep: '30112-000',
+        address: 'Avenida Afonso Pena',
+        addressNumber: '1537',
+        complement: 'Loja 12',
+        neighborhood: 'Centro',
+        city: 'Belo Horizonte',
+        state: 'MG',
+        country: 'Brasil'
       }
     }),
     prisma.user.create({
@@ -125,7 +161,16 @@ async function main() {
         phone: '(41) 95555-5555',
         bio: 'Ex-atleta dedicada a projetos esportivos para jovens em situação de risco.',
         avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&h=150&fit=crop&crop=face',
-        isVerified: true
+        isVerified: true,
+        // Endereço em Curitiba
+        cep: '80250-030',
+        address: 'Rua XV de Novembro',
+        addressNumber: '999',
+        complement: 'Sala 501',
+        neighborhood: 'Centro',
+        city: 'Curitiba',
+        state: 'PR',
+        country: 'Brasil'
       }
     }),
     prisma.user.create({
@@ -137,7 +182,16 @@ async function main() {
         phone: '(51) 94444-6666',
         bio: 'Desenvolvedor e instrutor de programação para jovens de baixa renda.',
         avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-        isVerified: true
+        isVerified: true,
+        // Endereço em Porto Alegre
+        cep: '90035-001',
+        address: 'Rua dos Andradas',
+        addressNumber: '1234',
+        complement: 'Apto 302',
+        neighborhood: 'Centro Histórico',
+        city: 'Porto Alegre',
+        state: 'RS',
+        country: 'Brasil'
       }
     })
   ])
