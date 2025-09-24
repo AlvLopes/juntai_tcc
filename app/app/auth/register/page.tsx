@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '@/components/ui/card'
+import { Logo } from '@/components/ui/logo'
 import { Heart, Mail, Lock, User, Phone, ArrowRight } from 'lucide-react'
 import { toast } from 'sonner'
 import AddressForm from '@/components/ui/address-form'
@@ -116,7 +117,12 @@ export default function RegisterPage() {
       <div className="w-full max-w-2xl space-y-8">
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center">
-            <Heart className="h-12 w-12 text-primary" />
+            <Logo 
+              variant="vertical-2" 
+              size="lg" 
+              href="/"
+              className="mb-4"
+            />
           </div>
           <h1 className="text-3xl font-bold text-gray-900">Junte-se ao Juntaí</h1>
           <p className="text-gray-600">

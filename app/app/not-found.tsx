@@ -1,6 +1,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { Logo } from '@/components/ui/logo';
 import { ArrowLeft, Home, AlertCircle } from 'lucide-react';
 
 export default function NotFoundPage() {
@@ -58,12 +59,12 @@ export default function NotFoundPage() {
         
         {/* Brand */}
         <div className="pt-8">
-          <Link href="/" className="inline-flex items-center gap-2 text-primary hover:text-primary/80 font-semibold">
-            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-sm">J</span>
-            </div>
-            <span className="text-xl">Juntaí</span>
-          </Link>
+          <Logo 
+            variant="horizontal-2" 
+            size="md" 
+            href="/"
+            className="inline-block hover:opacity-80 transition-opacity"
+          />
         </div>
         
         {/* Additional Help */}
