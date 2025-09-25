@@ -1,6 +1,7 @@
 
 'use client'
 
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { CalendarDays, MapPin, Users, Heart } from 'lucide-react'
@@ -17,18 +18,25 @@ interface ProjectCardProps {
 }
 
 export function ProjectCard({ project, className = '' }: ProjectCardProps) {
+  const [daysRemaining, setDaysRemaining] = useState(0)
+  const [createdDate, setCreatedDate] = useState('')
+
   const progressPercentage = Math.min(
     (project.currentAmount / project.goalAmount) * 100,
     100
   )
   
-  const daysRemaining = Math.max(
-    0,
-    Math.ceil(
-      (new Date(project.endDate).getTime() - new Date().getTime()) / 
-      (1000 * 60 * 60 * 24)
+  useEffect(() => {
+    const remaining = Math.max(
+      0,
+      Math.ceil(
+        (new Date(project.endDate).getTime() - new Date().getTime()) / 
+        (1000 * 60 * 60 * 24)
+      )
     )
-  )
+    setDaysRemaining(remaining)
+    setCreatedDate(new Date(project.createdAt).toLocaleDateString('pt-BR'))
+  }, [project.endDate, project.createdAt])
 
   return (
     <motion.div
@@ -137,7 +145,7 @@ export function ProjectCard({ project, className = '' }: ProjectCardProps) {
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <CalendarDays className="h-3 w-3" />
               <span>
-                {new Date(project.createdAt).toLocaleDateString('pt-BR')}
+                {createdDate}
               </span>
             </div>
           </div>

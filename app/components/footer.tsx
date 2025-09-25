@@ -15,7 +15,7 @@ import {
 } from 'lucide-react'
 
 export function Footer() {
-  const currentYear = new Date().getFullYear()
+  const currentYear = 2025
 
   const footerLinks = {
     platform: [

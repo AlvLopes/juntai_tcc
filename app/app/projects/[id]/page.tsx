@@ -219,9 +219,18 @@ export default function ProjectDetailPage() {
     )
   }
 
+  const [daysRemaining, setDaysRemaining] = useState(0)
+  const [isExpired, setIsExpired] = useState(false)
+  const [projectCreatedDate, setProjectCreatedDate] = useState('')
+  
   const isOwner = session?.user?.id === project.creator.id.toString()
-  const daysRemaining = Math.max(0, Math.ceil((new Date(project.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
-  const isExpired = daysRemaining === 0
+
+  useEffect(() => {
+    const remaining = Math.max(0, Math.ceil((new Date(project.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
+    setDaysRemaining(remaining)
+    setIsExpired(remaining === 0)
+    setProjectCreatedDate(new Date(project.createdAt).toLocaleDateString('pt-BR'))
+  }, [project.endDate, project.createdAt])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 py-8">
@@ -493,7 +502,7 @@ export default function ProjectDetailPage() {
                 )}
 
                 <div className="text-sm text-gray-600">
-                  <span>Projeto criado em {new Date(project.createdAt).toLocaleDateString('pt-BR')}</span>
+                  <span>Projeto criado em {projectCreatedDate}</span>
                 </div>
               </CardContent>
             </Card>
