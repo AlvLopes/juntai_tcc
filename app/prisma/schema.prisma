@@ -18,6 +18,7 @@ model User {
   firstName         String
   lastName          String
   phone             String?
+  cpf               String?   @unique
   bio               String?
   avatar            String?
   isVerified        Boolean   @default(false)

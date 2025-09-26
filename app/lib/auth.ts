@@ -41,6 +41,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
+          avatar: user.avatar || undefined,
         }
       }
     })
@@ -53,6 +54,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.firstName = user.firstName
         token.lastName = user.lastName
+        token.avatar = user.avatar
       }
       return token
     },
@@ -61,6 +63,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.sub as string
         session.user.firstName = token.firstName as string
         session.user.lastName = token.lastName as string
+        session.user.avatar = token.avatar as string || undefined
       }
       return session
     }

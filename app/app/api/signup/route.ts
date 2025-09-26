@@ -13,6 +13,7 @@ export async function POST(req: NextRequest) {
       firstName, 
       lastName, 
       phone,
+      cpf,
       cep,
       address,
       addressNumber,
@@ -23,9 +24,21 @@ export async function POST(req: NextRequest) {
       country
     } = await req.json()
 
-    if (!email || !password || !firstName || !lastName) {
+    if (!email || !password || !firstName || !lastName || !cpf) {
       return NextResponse.json(
         { error: 'Campos obrigatórios não preenchidos' },
+        { status: 400 }
+      )
+    }
+
+    // Verificar se CPF já está em uso
+    const existingCpfUser = await prisma.user.findFirst({
+      where: { cpf: cpf.replace(/[^\d]/g, '') }
+    })
+
+    if (existingCpfUser) {
+      return NextResponse.json(
+        { error: 'CPF já cadastrado na plataforma' },
         { status: 400 }
       )
     }
@@ -53,6 +66,7 @@ export async function POST(req: NextRequest) {
         firstName,
         lastName,
         phone: phone || null,
+        cpf: cpf.replace(/[^\d]/g, ''), // Salvar apenas números
         cep: cep || null,
         address: address || null,
         addressNumber: addressNumber || null,

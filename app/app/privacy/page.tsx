@@ -1,9 +1,40 @@
 
+'use client'
+
+import { useState, useEffect } from 'react'
 import { Logo } from '@/components/ui/logo'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Shield, Eye, Database, Lock } from 'lucide-react'
 
 export default function PrivacyPage() {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 py-12">
+        <div className="container mx-auto max-w-4xl px-4">
+          <div className="text-center mb-12">
+            <div className="flex justify-center mb-6">
+              <Logo variant="horizontal-2" size="lg" />
+            </div>
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <Shield className="h-8 w-8 text-primary" />
+              <h1 className="text-4xl font-bold text-gray-900">
+                Política de Privacidade
+              </h1>
+            </div>
+            <p className="text-lg text-gray-600">
+              Carregando...
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 py-12">
       <div className="container mx-auto max-w-4xl px-4">

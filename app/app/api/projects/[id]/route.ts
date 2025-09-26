@@ -194,12 +194,48 @@ export async function DELETE(
       )
     }
 
+    const { password } = await req.json()
+    
+    if (!password) {
+      return NextResponse.json(
+        { error: 'Senha é obrigatória para exclusão' },
+        { status: 400 }
+      )
+    }
+
+    // Verificar a senha do usuário
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(session.user.id) },
+      select: { password: true }
+    })
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Usuário não encontrado' },
+        { status: 404 }
+      )
+    }
+
+    const bcrypt = require('bcryptjs')
+    const isValidPassword = await bcrypt.compare(password, user.password)
+    
+    if (!isValidPassword) {
+      return NextResponse.json(
+        { error: 'Senha incorreta' },
+        { status: 401 }
+      )
+    }
+
     const projectId = parseInt(params.id)
     
-    // Verificar se o usuário é o criador do projeto
+    // Verificar se o usuário é o criador do projeto e se o projeto está inativo
     const existingProject = await prisma.project.findUnique({
       where: { id: projectId },
-      select: { creatorId: true }
+      select: { 
+        creatorId: true,
+        isActive: true,
+        createdAt: true
+      }
     })
 
     if (!existingProject) {
@@ -213,6 +249,23 @@ export async function DELETE(
       return NextResponse.json(
         { error: 'Não autorizado' },
         { status: 403 }
+      )
+    }
+
+    // Só permite exclusão se o projeto estiver inativo
+    if (existingProject.isActive) {
+      return NextResponse.json(
+        { error: 'Despublique o projeto antes de excluí-lo permanentemente' },
+        { status: 400 }
+      )
+    }
+
+    // Verificar se passaram 48 horas desde a desativação
+    const twoDaysAgo = new Date(Date.now() - 48 * 60 * 60 * 1000)
+    if (existingProject.createdAt > twoDaysAgo) {
+      return NextResponse.json(
+        { error: 'Aguarde 48 horas após despublicar para excluir permanentemente' },
+        { status: 400 }
       )
     }
 

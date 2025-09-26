@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '@/components/ui/card'
 import { Logo } from '@/components/ui/logo'
-import { Heart, Mail, Lock, User, Phone, ArrowRight } from 'lucide-react'
+import { Heart, Mail, Lock, User, Phone, ArrowRight, CreditCard } from 'lucide-react'
 import { toast } from 'sonner'
 import AddressForm from '@/components/ui/address-form'
 
@@ -19,6 +19,7 @@ export default function RegisterPage() {
     lastName: '',
     email: '',
     phone: '',
+    cpf: '',
     password: '',
     confirmPassword: ''
   })
@@ -37,20 +38,69 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
+  const validateCPF = (cpf: string) => {
+    cpf = cpf.replace(/[^\d]/g, '')
+    
+    if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) {
+      return false
+    }
+    
+    let sum = 0
+    for (let i = 0; i < 9; i++) {
+      sum += parseInt(cpf.charAt(i)) * (10 - i)
+    }
+    let remainder = (sum * 10) % 11
+    if (remainder === 10 || remainder === 11) remainder = 0
+    if (remainder !== parseInt(cpf.charAt(9))) return false
+    
+    sum = 0
+    for (let i = 0; i < 10; i++) {
+      sum += parseInt(cpf.charAt(i)) * (11 - i)
+    }
+    remainder = (sum * 10) % 11
+    if (remainder === 10 || remainder === 11) remainder = 0
+    if (remainder !== parseInt(cpf.charAt(10))) return false
+    
+    return true
+  }
+
+  const formatCPF = (value: string) => {
+    return value
+      .replace(/\D/g, '')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d)/, '$1.$2')
+      .replace(/(\d{3})(\d{1,2})/, '$1-$2')
+      .replace(/(-\d{2})\d+?$/, '$1')
+  }
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    })
+    const { name, value } = e.target
+    
+    if (name === 'cpf') {
+      setFormData({
+        ...formData,
+        [name]: formatCPF(value)
+      })
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value
+      })
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    const { firstName, lastName, email, password, confirmPassword, phone } = formData
+    const { firstName, lastName, email, password, confirmPassword, phone, cpf } = formData
     
-    if (!firstName || !lastName || !email || !password) {
+    if (!firstName || !lastName || !email || !password || !cpf) {
       toast.error('Preencha todos os campos obrigatórios')
+      return
+    }
+
+    if (!validateCPF(cpf)) {
+      toast.error('CPF inválido')
       return
     }
 
@@ -78,6 +128,7 @@ export default function RegisterPage() {
           email,
           password,
           phone,
+          cpf,
           // Dados de endereço
           cep: addressData.cep,
           address: addressData.address,
@@ -200,6 +251,26 @@ export default function RegisterPage() {
                     className="pl-10"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="cpf">CPF *</Label>
+                <div className="relative">
+                  <CreditCard className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="cpf"
+                    name="cpf"
+                    placeholder="000.000.000-00"
+                    value={formData.cpf}
+                    onChange={handleChange}
+                    required
+                    maxLength={14}
+                    className="pl-10"
+                  />
+                </div>
+                <p className="text-xs text-gray-500">
+                  Necessário para verificação de identidade e segurança da plataforma
+                </p>
               </div>
 
               {/* Componente de endereço */}

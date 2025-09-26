@@ -13,6 +13,8 @@ import { Progress } from '@/components/ui/progress'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { DonationModal } from '@/components/donation-modal'
 import { 
   Heart, 
@@ -52,6 +54,9 @@ export default function ProjectDetailPage() {
   const [commentText, setCommentText] = useState('')
   const [submittingComment, setSubmittingComment] = useState(false)
   const [showDonationModal, setShowDonationModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deletePassword, setDeletePassword] = useState('')
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     if (params.id) {
@@ -133,17 +138,27 @@ export default function ProjectDetailPage() {
   }
 
   const handleDeleteProject = async () => {
-    if (!confirm('Tem certeza que deseja excluir este projeto? Esta ação não pode ser desfeita.')) {
+    if (!deletePassword) {
+      toast.error('Digite sua senha para confirmar a exclusão')
       return
     }
 
     try {
+      setIsDeleting(true)
+      
       const response = await fetch(`/api/projects/${params.id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          password: deletePassword
+        })
       })
 
       if (response.ok) {
         toast.success('Projeto excluído com sucesso')
+        setShowDeleteModal(false)
         router.push('/dashboard')
       } else {
         const error = await response.json()
@@ -152,6 +167,37 @@ export default function ProjectDetailPage() {
     } catch (error) {
       console.error('Erro ao excluir projeto:', error)
       toast.error('Erro ao excluir projeto')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const handleDeactivateProject = async () => {
+    if (!confirm('Deseja despublicar este projeto? Ele ficará inativo mas não será excluído.')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/projects/${params.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          isActive: false
+        })
+      })
+
+      if (response.ok) {
+        toast.success('Projeto despublicado com sucesso')
+        fetchProjectDetails() // Recarregar dados
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Erro ao despublicar projeto')
+      }
+    } catch (error) {
+      console.error('Erro ao despublicar projeto:', error)
+      toast.error('Erro ao despublicar projeto')
     }
   }
 
@@ -288,14 +334,26 @@ export default function ProjectDetailPage() {
                           Editar
                         </Link>
                       </Button>
-                      <Button 
-                        variant="destructive" 
-                        size="sm"
-                        onClick={handleDeleteProject}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Excluir
-                      </Button>
+                      
+                      {project.isActive ? (
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={handleDeactivateProject}
+                        >
+                          <AlertTriangle className="h-4 w-4 mr-2" />
+                          Despublicar
+                        </Button>
+                      ) : (
+                        <Button 
+                          variant="destructive" 
+                          size="sm"
+                          onClick={() => setShowDeleteModal(true)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Excluir Definitivamente
+                        </Button>
+                      )}
                     </>
                   )}
                 </div>
@@ -520,6 +578,66 @@ export default function ProjectDetailPage() {
               fetchProjectDetails() // Atualizar dados do projeto
             }}
           />
+        )}
+
+        {/* Modal de Confirmação de Exclusão */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                  <AlertTriangle className="w-5 h-5 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">Excluir Projeto</h3>
+                  <p className="text-sm text-gray-600">
+                    Esta ação não pode ser desfeita
+                  </p>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                <p className="text-gray-700">
+                  Para confirmar a exclusão permanente do projeto <strong>"{project?.title}"</strong>, 
+                  digite sua senha:
+                </p>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="deletePassword">Senha da conta</Label>
+                  <Input
+                    id="deletePassword"
+                    type="password"
+                    value={deletePassword}
+                    onChange={(e) => setDeletePassword(e.target.value)}
+                    placeholder="Digite sua senha"
+                    className="w-full"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex gap-3 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowDeleteModal(false)
+                    setDeletePassword('')
+                  }}
+                  disabled={isDeleting}
+                  className="flex-1"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteProject}
+                  disabled={isDeleting || !deletePassword}
+                  className="flex-1"
+                >
+                  {isDeleting ? 'Excluindo...' : 'Excluir Permanentemente'}
+                </Button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>

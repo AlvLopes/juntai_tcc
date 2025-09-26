@@ -8,6 +8,7 @@ declare module 'next-auth' {
       email: string
       firstName: string
       lastName: string
+      avatar?: string
     }
   }
 
@@ -16,6 +17,7 @@ declare module 'next-auth' {
     email: string
     firstName: string
     lastName: string
+    avatar?: string
   }
 }
 
@@ -23,5 +25,6 @@ declare module 'next-auth/jwt' {
   interface JWT {
     firstName: string
     lastName: string
+    avatar?: string
   }
 }
