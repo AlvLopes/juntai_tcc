@@ -217,7 +217,7 @@ export default function MissionPage() {
                 Veja Nosso Impacto
               </Link>
             </Button>
-            <Button size="lg" variant="outline" className="text-white border-white hover:bg-white hover:text-primary" asChild>
+            <Button size="lg" className="bg-white text-primary border-white hover:bg-gray-100 hover:text-primary" asChild>
               <Link href="/about">
                 <Users className="w-5 h-5 mr-2" />
                 Conheça Nossa História

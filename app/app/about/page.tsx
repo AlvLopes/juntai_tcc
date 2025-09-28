@@ -1,4 +1,5 @@
 
+
 import { Logo } from '@/components/ui/logo'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -192,7 +193,7 @@ export default function AboutPage() {
                 Criar Conta Gratuita
               </Link>
             </Button>
-            <Button size="lg" variant="outline" className="text-white border-white hover:bg-white hover:text-primary" asChild>
+            <Button size="lg" className="bg-white text-primary border-white hover:bg-gray-100 hover:text-primary" asChild>
               <Link href="/contact">
                 <Heart className="w-5 h-5 mr-2" />
                 Entre em Contato

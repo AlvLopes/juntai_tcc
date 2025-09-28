@@ -40,8 +40,16 @@ const projectSchema = z.object({
   location: z.string()
     .optional(),
   endDate: z.date()
-    .min(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), 'Data de encerramento deve ser pelo menos 7 dias no futuro')
-    .max(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), 'Data de encerramento deve ser no máximo 1 ano no futuro')
+    .refine((date) => {
+      const now = new Date()
+      const minDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+      return date >= minDate
+    }, 'Data de encerramento deve ser pelo menos 7 dias no futuro')
+    .refine((date) => {
+      const now = new Date()
+      const maxDate = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000)
+      return date <= maxDate
+    }, 'Data de encerramento deve ser no máximo 1 ano no futuro')
 })
 
 type ProjectFormData = z.infer<typeof projectSchema>
@@ -53,7 +61,7 @@ interface Category {
 
 export default function CreateProjectPage() {
   const router = useRouter()
-  const { data: session, status } = useSession() || {}
+  const { data: session, status } = useSession()
   const [categories, setCategories] = useState<Category[]>([])
   const [mediaFiles, setMediaFiles] = useState<any[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -317,10 +325,12 @@ export default function CreateProjectPage() {
                           mode="single"
                           selected={watchedEndDate}
                           onSelect={(date) => date && setValue('endDate', date)}
-                          disabled={(date) => 
-                            date < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) ||
-                            date > new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-                          }
+                          disabled={(date) => {
+                            const now = new Date()
+                            const minDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+                            const maxDate = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000)
+                            return date < minDate || date > maxDate
+                          }}
                           initialFocus
                         />
                       </PopoverContent>

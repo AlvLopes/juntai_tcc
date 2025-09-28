@@ -120,7 +120,7 @@ export default function MediaUpload({
       try {
         const preview = await createPreview(file)
         const mediaFile: MediaFile = {
-          id: Math.random().toString(36).substring(7),
+          id: `${Date.now()}-${media.length + newMedia.length}-${file.name.replace(/\W/g, '')}`,
           file,
           preview,
           type: fileType,

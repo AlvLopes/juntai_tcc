@@ -57,6 +57,12 @@ export default function ProjectDetailPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deletePassword, setDeletePassword] = useState('')
   const [isDeleting, setIsDeleting] = useState(false)
+  const [daysRemaining, setDaysRemaining] = useState(0)
+  const [isExpired, setIsExpired] = useState(false)
+  const [projectCreatedDate, setProjectCreatedDate] = useState('')
+
+  // Calculate isOwner here to avoid conditional hook calling
+  const isOwner = session?.user?.id === project?.creator?.id?.toString()
 
   useEffect(() => {
     if (params.id) {
@@ -64,6 +70,16 @@ export default function ProjectDetailPage() {
       fetchComments()
     }
   }, [params.id])
+
+  // Move the date calculation logic here to avoid conditional hook usage
+  useEffect(() => {
+    if (project) {
+      const remaining = Math.max(0, Math.ceil((new Date(project.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
+      setDaysRemaining(remaining)
+      setIsExpired(remaining === 0)
+      setProjectCreatedDate(new Date(project.createdAt).toLocaleDateString('pt-BR'))
+    }
+  }, [project])
 
   const fetchProjectDetails = async () => {
     try {
@@ -264,19 +280,6 @@ export default function ProjectDetailPage() {
       </div>
     )
   }
-
-  const [daysRemaining, setDaysRemaining] = useState(0)
-  const [isExpired, setIsExpired] = useState(false)
-  const [projectCreatedDate, setProjectCreatedDate] = useState('')
-  
-  const isOwner = session?.user?.id === project.creator.id.toString()
-
-  useEffect(() => {
-    const remaining = Math.max(0, Math.ceil((new Date(project.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
-    setDaysRemaining(remaining)
-    setIsExpired(remaining === 0)
-    setProjectCreatedDate(new Date(project.createdAt).toLocaleDateString('pt-BR'))
-  }, [project.endDate, project.createdAt])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 py-8">
