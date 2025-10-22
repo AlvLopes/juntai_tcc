@@ -22,7 +22,8 @@ export function Footer() {
       { name: 'Como Funciona', href: '/how-it-works' },
       { name: 'Explorar Projetos', href: '/explore' },
       { name: 'Criar Projeto', href: '/projects/create' },
-      { name: 'Categorias', href: '/categories' }
+      { name: 'Categorias', href: '/categories' },
+      { name: '🧪 Modo de Teste', href: '/test-mode' }
     ],
     company: [
       { name: 'Sobre Nós', href: '/about' },

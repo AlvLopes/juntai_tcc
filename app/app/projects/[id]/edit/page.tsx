@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -20,8 +21,18 @@ import { Switch } from '@/components/ui/switch'
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { CalendarIcon, Edit, Save, ArrowLeft } from 'lucide-react'
+import { CalendarIcon, Edit, Save, ArrowLeft, X, Upload, ImageIcon, Video, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 const projectSchema = z.object({
   title: z.string()
@@ -53,6 +64,14 @@ interface Category {
   name: string
 }
 
+interface ProjectMedia {
+  id: number
+  url: string
+  type: 'IMAGEM' | 'VIDEO'
+  filename?: string
+  order: number
+}
+
 interface Project {
   id: number
   title: string
@@ -67,6 +86,7 @@ interface Project {
   location?: string
   categoryId: number
   creatorId: number
+  media?: ProjectMedia[]
 }
 
 export default function EditProjectPage() {
@@ -79,6 +99,11 @@ export default function EditProjectPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [projectMedia, setProjectMedia] = useState<ProjectMedia[]>([])
+  const [newMediaFiles, setNewMediaFiles] = useState<File[]>([])
+  const [mediaToDelete, setMediaToDelete] = useState<number | null>(null)
+  const [isDeletingMedia, setIsDeletingMedia] = useState(false)
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false)
 
   const {
     register,
@@ -120,6 +145,11 @@ export default function EditProjectPage() {
         }
         
         setProject(data)
+        
+        // Carregar mídia do projeto
+        if (data.media && data.media.length > 0) {
+          setProjectMedia(data.media)
+        }
         
         // Preencher formulário
         setValue('title', data.title)
@@ -176,13 +206,120 @@ export default function EditProjectPage() {
     }
   }
 
+  const handleNewMediaSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files) return
+
+    const validFiles: File[] = []
+    
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
+      const isVideo = file.type.startsWith('video/')
+      const isImage = file.type.startsWith('image/')
+      
+      if (!isVideo && !isImage) {
+        toast.error(`Arquivo ${file.name} não é uma imagem ou vídeo`)
+        continue
+      }
+
+      const maxSize = isVideo ? 50 * 1024 * 1024 : 5 * 1024 * 1024
+      if (file.size > maxSize) {
+        const maxSizeMB = isVideo ? 50 : 5
+        toast.error(`${file.name}: Tamanho máximo ${maxSizeMB}MB`)
+        continue
+      }
+
+      validFiles.push(file)
+    }
+
+    if (validFiles.length > 0) {
+      setNewMediaFiles(prev => [...prev, ...validFiles])
+      toast.success(`${validFiles.length} arquivo(s) adicionado(s)`)
+    }
+
+    // Reset input
+    e.target.value = ''
+  }
+
+  const removeNewMediaFile = (index: number) => {
+    setNewMediaFiles(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const handleDeleteMedia = async (mediaId: number) => {
+    try {
+      setIsDeletingMedia(true)
+      
+      const response = await fetch(`/api/projects/media/upload?mediaId=${mediaId}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        setProjectMedia(prev => prev.filter(m => m.id !== mediaId))
+        toast.success('Imagem removida com sucesso')
+        setMediaToDelete(null)
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Erro ao remover imagem')
+      }
+    } catch (error) {
+      console.error('Erro ao remover mídia:', error)
+      toast.error('Erro ao remover imagem')
+    } finally {
+      setIsDeletingMedia(false)
+    }
+  }
+
+  const uploadNewMedia = async () => {
+    if (newMediaFiles.length === 0) return true
+
+    try {
+      setIsUploadingMedia(true)
+      
+      const formData = new FormData()
+      formData.append('projectId', params.id as string)
+      
+      newMediaFiles.forEach((file, index) => {
+        formData.append(`media-${index}`, file)
+      })
+
+      const response = await fetch('/api/projects/media/upload', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        toast.success(`${result.media.length} imagem(ns) adicionada(s)`)
+        setNewMediaFiles([])
+        return true
+      } else {
+        const error = await response.json()
+        toast.error(error.error || 'Erro ao adicionar imagens')
+        return false
+      }
+    } catch (error) {
+      console.error('Erro no upload:', error)
+      toast.error('Erro ao adicionar imagens')
+      return false
+    } finally {
+      setIsUploadingMedia(false)
+    }
+  }
+
   const onSubmit = async (data: ProjectFormData) => {
     try {
       setIsSubmitting(true)
 
+      // Primeiro, fazer upload das novas mídias
+      const uploadSuccess = await uploadNewMedia()
+      if (!uploadSuccess && newMediaFiles.length > 0) {
+        // Se houver erro no upload e tinha arquivos para enviar, não continuar
+        return
+      }
+
       let imageUrl = project?.image
       
-      // Upload da nova imagem se fornecida
+      // Upload da nova imagem principal se fornecida
       if (imageFile) {
         const formData = new FormData()
         formData.append('file', imageFile)
@@ -412,32 +549,169 @@ export default function EditProjectPage() {
                   </div>
                 </div>
 
-                {/* Upload de Imagem */}
-                <div className="space-y-2">
-                  <Label htmlFor="image">Imagem do Projeto</Label>
-                  <div className="space-y-4">
-                    {(imagePreview || project.image) && (
-                      <div className="relative w-full aspect-video rounded-lg overflow-hidden border">
-                        <Image
-                          src={imagePreview || project.image!}
-                          alt="Preview"
-                          fill
-                          className="object-cover"
-                        />
+                {/* Gerenciamento de Imagens e Vídeos do Projeto */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-base font-semibold">Galeria de Imagens e Vídeos</Label>
+                    <Badge variant="outline">
+                      {projectMedia.length} arquivo(s) atual(is)
+                    </Badge>
+                  </div>
+
+                  {/* Imagens/Vídeos Existentes */}
+                  {projectMedia.length > 0 && (
+                    <div className="space-y-3">
+                      <p className="text-sm text-muted-foreground">Arquivos atuais:</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {projectMedia.map((media, index) => (
+                          <div key={media.id} className="relative group border rounded-lg overflow-hidden">
+                            <div className="aspect-video relative bg-gray-100">
+                              {media.type === 'VIDEO' ? (
+                                <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                                  <Video className="h-12 w-12 text-gray-400" />
+                                </div>
+                              ) : (
+                                <Image
+                                  src={media.url}
+                                  alt={media.filename || `Imagem ${index + 1}`}
+                                  fill
+                                  className="object-cover"
+                                  sizes="(max-width: 768px) 50vw, 33vw"
+                                />
+                              )}
+                              
+                              {/* Tipo e Ordem */}
+                              <div className="absolute top-2 left-2 bg-black/70 text-white px-2 py-1 rounded text-xs flex items-center space-x-1">
+                                {media.type === 'VIDEO' ? (
+                                  <><Video className="h-3 w-3" /> VIDEO</>
+                                ) : (
+                                  <><ImageIcon className="h-3 w-3" /> IMG</>
+                                )}
+                              </div>
+                              
+                              <div className="absolute top-2 right-2 bg-primary text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium">
+                                {index + 1}
+                              </div>
+
+                              {/* Botão remover */}
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                className="absolute bottom-2 right-2 h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() => setMediaToDelete(media.id)}
+                                disabled={isDeletingMedia}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            
+                            <div className="p-2 border-t bg-white">
+                              <p className="text-xs truncate" title={media.filename}>
+                                {media.filename || `Arquivo ${index + 1}`}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Adicionar Novas Imagens */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="newMedia" className="text-sm font-medium">
+                        Adicionar Novos Arquivos
+                      </Label>
+                      {newMediaFiles.length > 0 && (
+                        <Badge variant="secondary">
+                          {newMediaFiles.length} novo(s)
+                        </Badge>
+                      )}
+                    </div>
+
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                      <Input
+                        id="newMedia"
+                        type="file"
+                        multiple
+                        accept="image/*,video/*"
+                        onChange={handleNewMediaSelect}
+                        className="hidden"
+                      />
+                      <label htmlFor="newMedia" className="cursor-pointer">
+                        <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                        <p className="text-sm font-medium">
+                          Clique para selecionar arquivos
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Imagens: JPG, PNG, WebP (até 5MB)<br />
+                          Vídeos: MP4, WebM (até 50MB)
+                        </p>
+                      </label>
+                    </div>
+
+                    {/* Preview dos novos arquivos */}
+                    {newMediaFiles.length > 0 && (
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {newMediaFiles.map((file, index) => {
+                          const isVideo = file.type.startsWith('video/')
+                          const preview = isVideo ? null : URL.createObjectURL(file)
+                          
+                          return (
+                            <div key={index} className="relative group border rounded-lg overflow-hidden bg-blue-50 border-blue-200">
+                              <div className="aspect-video relative bg-gray-100">
+                                {isVideo ? (
+                                  <div className="w-full h-full flex items-center justify-center bg-blue-100">
+                                    <Video className="h-12 w-12 text-blue-400" />
+                                  </div>
+                                ) : preview ? (
+                                  <Image
+                                    src={preview}
+                                    alt={file.name}
+                                    fill
+                                    className="object-cover"
+                                    sizes="(max-width: 768px) 50vw, 33vw"
+                                  />
+                                ) : null}
+                                
+                                <div className="absolute top-2 left-2 bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium">
+                                  NOVO
+                                </div>
+
+                                {/* Botão remover */}
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  className="absolute bottom-2 right-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={() => removeNewMediaFile(index)}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
+                              
+                              <div className="p-2 border-t bg-white">
+                                <p className="text-xs truncate" title={file.name}>
+                                  {file.name}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  {(file.size / 1024 / 1024).toFixed(1)} MB
+                                </p>
+                              </div>
+                            </div>
+                          )
+                        })}
                       </div>
                     )}
-                    
-                    <Input
-                      id="image"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      className="cursor-pointer"
-                    />
-                    
-                    <p className="text-sm text-gray-500">
-                      Formatos aceitos: JPG, PNG, GIF. Tamanho máximo: 5MB
-                    </p>
+                  </div>
+
+                  {/* Informações */}
+                  <div className="text-sm bg-blue-50 border border-blue-200 p-3 rounded-lg">
+                    <p className="font-medium text-blue-800 mb-1">ℹ️ Informações</p>
+                    <ul className="text-xs text-blue-700 space-y-1">
+                      <li>• A primeira imagem será usada como capa do projeto</li>
+                      <li>• As novas imagens serão adicionadas ao salvar o projeto</li>
+                      <li>• Você pode remover imagens existentes clicando no ícone da lixeira</li>
+                    </ul>
                   </div>
                 </div>
 
@@ -498,6 +772,30 @@ export default function EditProjectPage() {
           </Card>
         </div>
       </div>
+
+      {/* Dialog de confirmação de exclusão de mídia */}
+      <AlertDialog open={mediaToDelete !== null} onOpenChange={(open) => !open && setMediaToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja remover esta imagem/vídeo? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeletingMedia}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => mediaToDelete && handleDeleteMedia(mediaToDelete)}
+              disabled={isDeletingMedia}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isDeletingMedia ? 'Removendo...' : 'Remover'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

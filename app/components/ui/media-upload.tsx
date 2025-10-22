@@ -52,11 +52,18 @@ export default function MediaUpload({
       return false
     }
 
-    // Verificar tamanho (10MB para imagens, 50MB para vídeos)
-    const maxSize = file.type.startsWith('video/') ? 50 * 1024 * 1024 : 10 * 1024 * 1024
+    // Verificar tamanho (5MB para imagens, 50MB para vídeos)
+    const maxSize = file.type.startsWith('video/') ? 50 * 1024 * 1024 : 5 * 1024 * 1024
     if (file.size > maxSize) {
-      const maxSizeMB = file.type.startsWith('video/') ? 50 : 10
-      toast.error(`Arquivo muito grande. Máximo ${maxSizeMB}MB`)
+      const maxSizeMB = file.type.startsWith('video/') ? 50 : 5
+      const fileType = file.type.startsWith('video/') ? 'vídeos' : 'imagens'
+      toast.error(
+        `🚫 ARQUIVO REJEITADO!\n\n` +
+        `O arquivo "${file.name}" tem ${(file.size / 1024 / 1024).toFixed(1)}MB.\n` +
+        `Tamanho máximo: ${maxSizeMB}MB para ${fileType}.\n\n` +
+        `⚠️ Arquivos acima do limite impedem a criação do projeto!`,
+        { duration: 6000 }
+      )
       return false
     }
 
@@ -113,7 +120,7 @@ export default function MediaUpload({
 
       // Verificar limite total
       if (media.length + newMedia.length >= maxFiles) {
-        toast.error(`Máximo ${maxFiles} arquivos permitidos`)
+        toast.error(`⚠️ Limite excedido! Máximo ${maxFiles} arquivos permitidos. Você já tem ${media.length} arquivo(s).`)
         break
       }
 
@@ -242,7 +249,7 @@ export default function MediaUpload({
             <p className="text-xs text-gray-500">
               Máximo {maxFiles} arquivos ({maxVideoFiles} vídeo{maxVideoFiles > 1 ? 's' : ''})
               <br />
-              Imagens: JPG, PNG, WebP, GIF (até 10MB)
+              Imagens: JPG, PNG, WebP, GIF (até 5MB)
               <br />
               Vídeos: MP4, WebM, OGG (até 50MB)
             </p>
@@ -251,14 +258,22 @@ export default function MediaUpload({
       </div>
 
       {/* Informações sobre requisitos */}
-      <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-        <p className="font-medium mb-1">Requisitos:</p>
-        <ul className="text-xs space-y-1">
+      <div className="text-sm bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-200 p-4 rounded-lg">
+        <p className="font-bold text-red-800 mb-2 flex items-center gap-2">
+          <span className="text-lg">⚠️</span>
+          ATENÇÃO: Limite de Tamanho
+        </p>
+        <ul className="text-xs space-y-1.5 text-gray-700">
+          <li className="font-semibold text-red-700">• <strong>Imagens:</strong> Máximo 5MB cada</li>
+          <li className="font-semibold text-red-700">• <strong>Vídeos:</strong> Máximo 50MB cada</li>
           <li>• Mínimo 2 imagens obrigatórias</li>
           <li>• Máximo {maxFiles} arquivos no total</li>
           <li>• Máximo {maxVideoFiles} vídeo{maxVideoFiles > 1 ? 's' : ''}</li>
           <li>• A primeira imagem será usada como capa</li>
         </ul>
+        <p className="mt-2 text-xs font-medium text-red-800 bg-red-100 p-2 rounded">
+          🚫 Arquivos acima do limite impedem a criação do projeto!
+        </p>
       </div>
 
       {/* Preview dos arquivos */}

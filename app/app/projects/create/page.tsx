@@ -109,7 +109,30 @@ export default function CreateProjectPage() {
 
       // Validar se há pelo menos 2 mídias
       if (mediaFiles.length < 2) {
-        toast.error('Adicione pelo menos 2 imagens para o projeto')
+        toast.error('⚠️ Adicione pelo menos 2 imagens para o projeto')
+        return
+      }
+
+      // Validar tamanho de todos os arquivos antes de enviar
+      const invalidFiles = mediaFiles.filter(mediaFile => {
+        const isVideo = mediaFile.file.type.startsWith('video/')
+        const maxSize = isVideo ? 50 * 1024 * 1024 : 5 * 1024 * 1024 // 5MB para imagens, 50MB para vídeos
+        return mediaFile.file.size > maxSize
+      })
+
+      if (invalidFiles.length > 0) {
+        const fileDetails = invalidFiles.map(f => 
+          `• ${f.file.name} (${(f.file.size / 1024 / 1024).toFixed(1)}MB)`
+        ).join('\n')
+        toast.error(
+          `🚫 PROJETO NÃO PODE SER CRIADO!\n\n` +
+          `Arquivos acima do limite de tamanho:\n${fileDetails}\n\n` +
+          `Tamanho máximo permitido:\n` +
+          `• Imagens: 5MB\n` +
+          `• Vídeos: 50MB\n\n` +
+          `Por favor, remova ou substitua os arquivos grandes.`,
+          { duration: 8000 }
+        )
         return
       }
 
@@ -151,13 +174,27 @@ export default function CreateProjectPage() {
         })
 
         if (!uploadResponse.ok) {
-          console.error('Erro no upload das mídias, mas projeto foi criado')
-          toast.warning('Projeto criado, mas houve erro no upload das imagens')
-        } else {
-          toast.success('Projeto criado com sucesso!')
+          const errorData = await uploadResponse.json()
+          console.error('Erro no upload das mídias:', errorData)
+          toast.error('Projeto criado, mas houve erro no upload das imagens. Por favor, edite o projeto e adicione as imagens novamente.')
+          router.push(`/projects/${project.id}/edit`)
+          return
         }
+        
+        const uploadResult = await uploadResponse.json()
+        console.log('Upload resultado:', uploadResult)
+        
+        if (uploadResult.rejectedFiles && uploadResult.rejectedFiles.length > 0) {
+          toast.warning(`Projeto criado! ${uploadResult.media.length} imagens enviadas, mas ${uploadResult.rejectedFiles.length} foram rejeitadas.`)
+        } else {
+          toast.success(`🎉 Projeto criado com sucesso! ${uploadResult.media.length} imagens adicionadas.`)
+        }
+      } else {
+        toast.success('Projeto criado com sucesso!')
       }
 
+      // Aguardar um pouco antes de redirecionar para garantir que o upload foi processado
+      await new Promise(resolve => setTimeout(resolve, 500))
       router.push(`/projects/${project.id}`)
       
     } catch (error) {
@@ -344,6 +381,19 @@ export default function CreateProjectPage() {
                 {/* Upload de Imagem */}
                 <div className="space-y-2">
                   <Label>Imagens e Vídeos do Projeto</Label>
+                  <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-center space-x-2 text-blue-800">
+                      <ImageIcon className="h-5 w-5" />
+                      <h4 className="font-medium">Requisitos de Imagem</h4>
+                    </div>
+                    <ul className="mt-2 text-sm text-blue-700 space-y-1">
+                      <li>• <strong>Tamanho máximo:</strong> 5MB por imagem</li>
+                      <li>• <strong>Formatos aceitos:</strong> JPG, PNG, WebP, GIF</li>
+                      <li>• <strong>Vídeos:</strong> MP4, WebM, OGG (até 50MB)</li>
+                      <li>• <strong>Mínimo:</strong> 2 imagens obrigatórias</li>
+                      <li>• <strong>Máximo:</strong> 6 arquivos no total (1 vídeo)</li>
+                    </ul>
+                  </div>
                   <MediaUpload
                     onMediaChange={handleMediaChange}
                     maxFiles={6}

@@ -1,4 +1,3 @@
-
 'use client'
 
 import { useState } from 'react'
@@ -13,17 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Heart, CreditCard, Shield, AlertCircle } from 'lucide-react'
 import { Project } from '@/lib/types'
 import { toast } from 'sonner'
-import dynamic from 'next/dynamic'
-
-// @ts-ignore
-const PayPalScriptProvider = dynamic(() => import('@paypal/react-paypal-js').then(mod => mod.PayPalScriptProvider), {
-  ssr: false
-})
-
-// @ts-ignore
-const PayPalButtons = dynamic(() => import('@paypal/react-paypal-js').then(mod => mod.PayPalButtons), {
-  ssr: false
-})
+import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js'
 
 interface DonationModalProps {
   project: Project
@@ -65,8 +54,12 @@ export function DonationModal({ project, isOpen, onClose, onSuccess }: DonationM
 
   const createPayPalOrder = async () => {
     try {
-      // Converter BRL para USD (taxa aproximada)
-      const usdAmount = (parseFloat(amount) / 5.5).toFixed(2)
+      const brlAmount = parseFloat(amount)
+      
+      console.log('🔄 Criando ordem PayPal:', {
+        brlAmount,
+        projectId: project.id
+      })
       
       const response = await fetch('/api/paypal/create-order', {
         method: 'POST',
@@ -75,7 +68,7 @@ export function DonationModal({ project, isOpen, onClose, onSuccess }: DonationM
         },
         body: JSON.stringify({
           projectId: project.id,
-          amount: usdAmount,
+          amount: brlAmount,
           message: message.trim() || undefined
         }),
       })
@@ -83,12 +76,14 @@ export function DonationModal({ project, isOpen, onClose, onSuccess }: DonationM
       const data = await response.json()
 
       if (!response.ok) {
+        console.error('❌ Erro na resposta da API:', data)
         throw new Error(data.error || 'Erro ao criar ordem de pagamento')
       }
 
+      console.log('✅ Ordem PayPal criada:', data.orderId)
       return data.orderId
     } catch (error: any) {
-      console.error('Erro ao criar ordem PayPal:', error)
+      console.error('❌ Erro ao criar ordem PayPal:', error)
       toast.error(error.message || 'Erro ao criar ordem de pagamento')
       throw error
     }
@@ -97,6 +92,12 @@ export function DonationModal({ project, isOpen, onClose, onSuccess }: DonationM
   const handlePayPalApprove = async (data: any) => {
     try {
       setLoading(true)
+      
+      console.log('🔄 Capturando pagamento PayPal:', {
+        orderId: data.orderID,
+        projectId: project.id,
+        amount: amount
+      })
       
       const response = await fetch('/api/paypal/capture-order', {
         method: 'POST',
@@ -112,17 +113,40 @@ export function DonationModal({ project, isOpen, onClose, onSuccess }: DonationM
         }),
       })
 
-      const result = await response.json()
+      console.log('📊 Resposta do servidor:', {
+        status: response.status,
+        statusText: response.statusText,
+        contentType: response.headers.get('content-type'),
+        ok: response.ok
+      })
+
+      // Capturar o texto da resposta primeiro para debug
+      const responseText = await response.text()
+      console.log('📄 Resposta bruta (primeiros 500 chars):', responseText.substring(0, 500))
+
+      let result: any
+      try {
+        result = JSON.parse(responseText)
+        console.log('✅ Resposta JSON parseada:', result)
+      } catch (parseError) {
+        console.error('❌ Erro ao parsear JSON:', parseError)
+        console.error('📄 Resposta não-JSON completa:', responseText)
+        throw new Error(`Erro do servidor (${response.status} ${response.statusText}): A resposta não é JSON válida. Resposta: ${responseText.substring(0, 200)}`)
+      }
 
       if (response.ok) {
+        console.log('✅ Pagamento capturado com sucesso:', result)
         toast.success('Doação realizada com sucesso! Obrigado pelo seu apoio! 💚')
         onSuccess?.()
         onClose()
       } else {
+        console.error('❌ Erro ao capturar pagamento:', result)
+        console.error('📋 Erro completo do PayPal:', result.fullError)
+        console.error('📝 Detalhes do erro:', result.details)
         throw new Error(result.error || 'Erro na confirmação do pagamento')
       }
     } catch (error: any) {
-      console.error('Erro ao capturar pagamento:', error)
+      console.error('❌ Erro ao capturar pagamento:', error)
       toast.error(error.message || 'Erro na confirmação do pagamento')
     } finally {
       setLoading(false)
@@ -131,7 +155,19 @@ export function DonationModal({ project, isOpen, onClose, onSuccess }: DonationM
 
   const handlePayPalError = (err: any) => {
     console.error('PayPal error:', err)
-    toast.error('Erro no pagamento PayPal')
+    
+    let errorMessage = 'Erro no pagamento PayPal'
+    
+    // Mensagens de erro mais específicas
+    if (err?.message?.includes('card')) {
+      errorMessage = '❌ Cartão rejeitado!\n\n🧪 Use os cartões de TESTE do PayPal:\n\nVisa: 4032 0348 8788 6760\nMastercard: 5425 2334 3010 9903\n\n⚠️ Cartões reais não funcionam no modo teste!'
+    } else if (err?.message?.includes('insufficient')) {
+      errorMessage = 'Saldo insuficiente no cartão de teste'
+    } else if (err?.message?.includes('declined')) {
+      errorMessage = '❌ Pagamento recusado!\n\n💡 Dica: Use um dos cartões de TESTE fornecidos acima.'
+    }
+    
+    toast.error(errorMessage, { duration: 8000 })
     setShowPayPal(false)
   }
 
@@ -176,7 +212,7 @@ export function DonationModal({ project, isOpen, onClose, onSuccess }: DonationM
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Heart className="h-5 w-5 text-red-500" />
@@ -255,6 +291,25 @@ export function DonationModal({ project, isOpen, onClose, onSuccess }: DonationM
                 </p>
               </div>
 
+              {/* Aviso de modo teste */}
+              <div className="bg-blue-50 border-2 border-blue-200 p-4 rounded-lg space-y-2">
+                <div className="flex items-center gap-2 text-sm font-bold text-blue-800">
+                  🧪 MODO DE TESTE ATIVO
+                </div>
+                <p className="text-xs text-blue-700">
+                  Este é um ambiente de testes. Use os cartões de teste do PayPal:
+                </p>
+                <div className="text-xs text-blue-700 space-y-1 bg-white p-2 rounded">
+                  <p><strong>Visa:</strong> 4032 0348 8788 6760</p>
+                  <p><strong>Mastercard:</strong> 5425 2334 3010 9903</p>
+                  <p><strong>CVV:</strong> Qualquer 3 dígitos</p>
+                  <p><strong>Validade:</strong> Qualquer data futura</p>
+                </div>
+                <p className="text-xs text-blue-600 font-medium">
+                  ⚠️ Não use cartões reais! Eles serão rejeitados.
+                </p>
+              </div>
+
               <Button
                 onClick={handleDonationSubmit}
                 disabled={loading || !amount || parseFloat(amount) < 1}
@@ -280,10 +335,20 @@ export function DonationModal({ project, isOpen, onClose, onSuccess }: DonationM
                 </p>
               </div>
 
+              {/* Aviso de modo teste na tela de pagamento */}
+              <div className="bg-blue-50 border-2 border-blue-300 p-3 rounded-lg">
+                <p className="text-xs font-bold text-blue-800 mb-2">🧪 MODO TESTE - Use cartões de teste:</p>
+                <div className="text-xs text-blue-700 space-y-1 bg-white p-2 rounded">
+                  <p><strong>Visa:</strong> 4032 0348 8788 6760</p>
+                  <p><strong>Mastercard:</strong> 5425 2334 3010 9903</p>
+                  <p><strong>CVV:</strong> Qualquer 3 dígitos | <strong>Validade:</strong> Data futura</p>
+                </div>
+              </div>
+
               <PayPalScriptProvider
                 options={{
                   clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || '',
-                  currency: 'USD'
+                  currency: 'BRL'
                 }}
               >
                 <PayPalButtons
@@ -292,6 +357,12 @@ export function DonationModal({ project, isOpen, onClose, onSuccess }: DonationM
                   onError={handlePayPalError}
                   onCancel={handlePayPalCancel}
                   disabled={loading}
+                  style={{
+                    layout: 'vertical',
+                    color: 'blue',
+                    shape: 'rect',
+                    label: 'pay'
+                  }}
                 />
               </PayPalScriptProvider>
 

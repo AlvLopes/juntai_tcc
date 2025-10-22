@@ -59,13 +59,13 @@ export async function POST(req: NextRequest) {
     // Obter token do PayPal
     const accessToken = await getPayPalAccessToken()
 
-    // Criar ordem no PayPal
+    // Criar ordem no PayPal com BRL (Real Brasileiro)
     const orderData = {
       intent: 'CAPTURE',
       purchase_units: [{
         amount: {
-          currency_code: 'USD', // PayPal Sandbox funciona melhor com USD
-          value: amount.toString()
+          currency_code: 'BRL', // Real Brasileiro
+          value: amount.toFixed(2)
         },
         description: `Doação para: ${project.title}`,
         custom_id: `${projectId}_${session.user.id}_${Date.now()}`
@@ -78,6 +78,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    console.log('🔄 Criando ordem no PayPal com dados:', orderData)
+
     const orderResponse = await fetch(`${process.env.PAYPAL_BASE_URL}/v2/checkout/orders`, {
       method: 'POST',
       headers: {
@@ -88,15 +90,34 @@ export async function POST(req: NextRequest) {
     })
 
     if (!orderResponse.ok) {
-      const error = await orderResponse.text()
-      console.error('PayPal order creation failed:', error)
+      const errorText = await orderResponse.text()
+      console.error('❌ PayPal order creation failed:', {
+        status: orderResponse.status,
+        statusText: orderResponse.statusText,
+        error: errorText
+      })
+      
+      let errorMessage = 'Erro ao criar ordem de pagamento'
+      try {
+        const errorJson = JSON.parse(errorText)
+        if (errorJson.message) {
+          errorMessage = errorJson.message
+        }
+        if (errorJson.details) {
+          console.error('Detalhes do erro:', errorJson.details)
+        }
+      } catch (e) {
+        // Erro não está em formato JSON
+      }
+      
       return NextResponse.json(
-        { error: 'Erro ao criar ordem de pagamento' },
+        { error: errorMessage, details: errorText },
         { status: 500 }
       )
     }
 
     const order = await orderResponse.json()
+    console.log('✅ Ordem PayPal criada com sucesso:', order.id)
 
     return NextResponse.json({
       orderId: order.id,

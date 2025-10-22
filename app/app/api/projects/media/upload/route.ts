@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
     }
 
     const uploadedMedia = []
+    const rejectedFiles: Array<{name: string, size: number, reason: string}> = []
     const entries = Array.from(formData.entries())
     let order = 0
 
@@ -52,12 +53,25 @@ export async function POST(req: NextRequest) {
         
         // Validação do arquivo
         if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
+          rejectedFiles.push({
+            name: file.name,
+            size: file.size,
+            reason: 'Tipo de arquivo não suportado'
+          })
           continue // Pular arquivos que não são imagem nem vídeo
         }
 
-        // Verificar tamanho do arquivo (10MB para imagens, 50MB para vídeos)
-        const maxSize = file.type.startsWith('video/') ? 50 * 1024 * 1024 : 10 * 1024 * 1024
+        // Verificar tamanho do arquivo (5MB para imagens, 50MB para vídeos)
+        const maxSize = file.type.startsWith('video/') ? 50 * 1024 * 1024 : 5 * 1024 * 1024
         if (file.size > maxSize) {
+          const maxSizeMB = file.type.startsWith('video/') ? 50 : 5
+          const fileSizeMB = (file.size / 1024 / 1024).toFixed(1)
+          console.warn(`Arquivo rejeitado: ${file.name} (${fileSizeMB}MB) excede o limite de ${maxSizeMB}MB`)
+          rejectedFiles.push({
+            name: file.name,
+            size: file.size,
+            reason: `Tamanho ${fileSizeMB}MB excede o limite de ${maxSizeMB}MB`
+          })
           continue // Pular arquivos muito grandes
         }
 
@@ -72,6 +86,11 @@ export async function POST(req: NextRequest) {
         
         try {
           // Criar diretório se não existir
+          const fs = require('fs')
+          if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true })
+          }
+          
           await writeFile(filepath, Buffer.from(await file.arrayBuffer()))
           
           // URL pública do arquivo
@@ -114,9 +133,23 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Se houve arquivos rejeitados por tamanho, retornar erro
+    if (rejectedFiles.length > 0 && uploadedMedia.length === 0) {
+      const details = rejectedFiles.map(f => `${f.name}: ${f.reason}`).join('; ')
+      return NextResponse.json({
+        error: 'Todos os arquivos foram rejeitados',
+        details: details,
+        rejectedFiles: rejectedFiles
+      }, { status: 400 })
+    }
+
     return NextResponse.json({
       message: `${uploadedMedia.length} arquivo(s) enviado(s) com sucesso`,
-      media: uploadedMedia
+      media: uploadedMedia,
+      ...(rejectedFiles.length > 0 && { 
+        warning: `${rejectedFiles.length} arquivo(s) rejeitado(s)`,
+        rejectedFiles: rejectedFiles
+      })
     })
 
   } catch (error) {

@@ -35,7 +35,11 @@ export async function POST(req: NextRequest) {
 
     if (file.size > 5 * 1024 * 1024) { // 5MB
       return NextResponse.json(
-        { error: 'Arquivo deve ter no máximo 5MB' },
+        { 
+          error: `⚠️ Imagem muito grande! O arquivo "${file.name}" tem ${(file.size / 1024 / 1024).toFixed(1)}MB. O tamanho máximo permitido é 5MB para imagens.`,
+          size: file.size,
+          maxSize: 5 * 1024 * 1024
+        },
         { status: 400 }
       )
     }
